@@ -34,4 +34,4 @@ cv2.imshow("result", result)
 cv2.waitKey(0)
 
 # Save Results
-cv2.imwrite('results/result81.png', result)
+# cv2.imwrite('results/result81.png', result)

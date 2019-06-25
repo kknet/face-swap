@@ -1,5 +1,4 @@
 import cv2
-import numpy as np
 from face_swap import get_triangles_img, show_process
 from image_utils import concatenate_images, resize_and_border_image, create_gif
 
@@ -7,7 +6,7 @@ from image_utils import concatenate_images, resize_and_border_image, create_gif
 def append_triangles_img(img, img2):
     for (i1, i2, img_new_face) in get_triangles_img(img, img2):
 
-        result = np.hstack((i1, i2, img_new_face))
+        result = concatenate_images((i1, i2, img_new_face), axis='h', border=5)
         result = cv2.resize(result, (int(result.shape[1] / 4), int(result.shape[0] / 4)))
         result = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
         yield result
@@ -37,6 +36,7 @@ first_steps = concatenate_images(
 
 first_steps = cv2.resize(first_steps, (int(first_steps.shape[1]/3), int(first_steps.shape[0]/3)))
 cv2.imwrite('results/first_steps81.png', first_steps)
+
 second_step = create_gif('results/second_step81.gif', append_triangles_img(img, img2))
 
 cv2.imshow("result", first_steps)
