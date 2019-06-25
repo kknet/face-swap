@@ -49,7 +49,7 @@ last_steps = concatenate_images(
     border=0
 )
 last_steps = cv2.resize(last_steps, (int(last_steps.shape[1]/3), int(last_steps.shape[0]/3)))
-cv2.imwrite('results/last_steps81.png', first_steps)
+cv2.imwrite('results/last_steps81.png', last_steps)
 
 
 cv2.imshow("first_steps", first_steps)
