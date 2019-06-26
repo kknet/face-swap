@@ -22,6 +22,8 @@ And what the script does:
 
 ![Process2](https://github.com/oriolbernal/face-swap/blob/master/results/second_step81.gif)
 
+![Process3](https://github.com/oriolbernal/face-swap/blob/master/results/last_steps81.png)
+
 ## Resources
 
 * The 81 points landmark detector model found in [codeniko - shape_predictor_81_face_landmarks](https://github.com/codeniko/shape_predictor_81_face_landmarks) has been used.

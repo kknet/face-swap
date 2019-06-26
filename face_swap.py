@@ -207,6 +207,94 @@ def swap_faces(img, img2=None):
         return img_changed_faces
 
 
+def get_process(img, img2):
+    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img_gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
+
+    face = get_faces(img_gray)[0]
+    face2 = get_faces(img_gray2)[0]
+
+    landmarks_points = get_landmarks_points(img_gray, face)
+    landmarks_points2 = get_landmarks_points(img_gray2, face2)
+
+    convexhull = cv2.convexHull(np.array(landmarks_points, np.int32))
+    convexhull2 = cv2.convexHull(np.array(landmarks_points2, np.int32))
+
+    indexes_triangles = get_delaunay_triangulation(landmarks_points, convexhull)
+    indexes_triangles2 = get_delaunay_triangulation(landmarks_points2, convexhull2)
+
+    img_new_face = get_new_face(img2, img, landmarks_points2, landmarks_points, indexes_triangles2)
+    img2_new_face = get_new_face(img, img2, landmarks_points, landmarks_points2, indexes_triangles)
+
+    img_changed_face_filtered = change_face(img, convexhull, img_new_face)
+    img2_changed_face_filtered = change_face(img2, convexhull2, img2_new_face)
+
+    color = (0, 255, 0)
+    thickness = 2
+    # RESULTS 1
+    img_face = draw_square(img.copy(), [(face.left(), face.top()), (face.right(), face.bottom())], color=color,
+                           thickness=thickness)
+    img_landmarks = draw_points(img.copy(), landmarks_points, color=color, thickness=thickness)
+    img_face_contour = cv2.polylines(img.copy(), [convexhull], True, color, thickness)
+    face_image, face_mask = get_faceImg_and_mask(img, img_gray, convexhull)
+
+    # White mask for showing results
+    whiteMask = cv2.fillConvexPoly(np.ones_like(img) * 255, convexhull, 0)
+    face_image = whiteMask + face_image
+
+    triangles_points = get_triangles_points(landmarks_points, indexes_triangles)
+    face_triangles = draw_triangles(face_image.copy(), triangles_points, color=color, thickness=thickness)
+
+    # Face swap without applying filter
+    img_face_mask = np.zeros_like(img[:, :, 0])
+    img_head_mask = cv2.fillConvexPoly(img_face_mask, convexhull, 255)
+    img_face_mask = cv2.bitwise_not(img_head_mask)
+    img_head_noface = cv2.bitwise_and(img, img, mask=img_face_mask)
+    img_changed_face = cv2.add(img_head_noface, img_new_face)
+
+    # RESULTS 2
+    img_face2 = draw_square(img2.copy(), [(face2.left(), face2.top()), (face2.right(), face2.bottom())], color=color,
+                            thickness=thickness)
+    img_landmarks2 = draw_points(img2.copy(), landmarks_points2, color=color, thickness=thickness)
+    img_face_contour2 = cv2.polylines(img2.copy(), [convexhull2], True, color, thickness)
+    face_image2, face_mask2 = get_faceImg_and_mask(img2, img_gray2, convexhull2)
+
+    # White mask for showing results
+    whiteMask2 = cv2.fillConvexPoly(np.ones_like(img2) * 255, convexhull2, 0)
+    face_image2 = whiteMask2 + face_image2
+
+    triangles_points2 = get_triangles_points(landmarks_points2, indexes_triangles2)
+    face_triangles2 = draw_triangles(face_image2.copy(), triangles_points2, color=color, thickness=thickness)
+
+    # Face swap without applying filter
+    img2_face_mask = np.zeros_like(img2[:, :, 0])
+    img2_head_mask = cv2.fillConvexPoly(img2_face_mask, convexhull2, 255)
+    img2_face_mask = cv2.bitwise_not(img2_head_mask)
+    img2_head_noface = cv2.bitwise_and(img2, img2, mask=img2_face_mask)
+    img2_changed_face = cv2.add(img2_head_noface, img2_new_face)
+
+    result = [
+        (img, img_face, img_landmarks, img_face_contour, face_image, face_triangles),
+        (img2, img_face2, img_landmarks2, img_face_contour2, face_image2, face_triangles2),
+        (img_new_face, img_changed_face, img_changed_face_filtered),
+        (img2_new_face, img2_changed_face, img2_changed_face_filtered)
+    ]
+
+    return result
+
+
+def get_triangles_points(points, indexes):
+    result_points = []
+    for index in indexes:
+        tr2_pt1 = points[index[0]]
+        tr2_pt2 = points[index[1]]
+        tr2_pt3 = points[index[2]]
+
+        result_points.append([tr2_pt1, tr2_pt2, tr2_pt3])
+
+    return result_points
+
+
 def get_triangles_img(img, img2):
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
@@ -219,7 +307,6 @@ def get_triangles_img(img, img2):
 
     convexhull = cv2.convexHull(np.array(landmarks_points, np.int32))
     indexes_triangles = get_delaunay_triangulation(landmarks_points, convexhull)
-
 
     img_new_face = np.zeros(img2.shape, np.uint8)
     # Triangulation of both faces
@@ -278,68 +365,3 @@ def get_triangles_img(img, img2):
         i2 = draw_triangle(img2.copy(), tr2_pt1, tr2_pt2, tr2_pt3)
 
         yield (i1, i2, img_new_face)
-
-
-def show_process(img, img2):
-
-    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    img_gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
-
-    face = get_faces(img_gray)[0]
-    face2 = get_faces(img_gray2)[0]
-
-    landmarks_points = get_landmarks_points(img_gray, face)
-    landmarks_points2 = get_landmarks_points(img_gray2, face2)
-
-    convexhull = cv2.convexHull(np.array(landmarks_points, np.int32))
-    convexhull2 = cv2.convexHull(np.array(landmarks_points2, np.int32))
-
-    indexes_triangles = get_delaunay_triangulation(landmarks_points, convexhull)
-    indexes_triangles2 = get_delaunay_triangulation(landmarks_points2, convexhull2)
-
-    color = (0, 255, 0)
-    thickness = 2
-    # RESULTS 1
-    img_face = draw_square(img.copy(), [(face.left(), face.top()), (face.right(), face.bottom())], color=color, thickness=thickness)
-    img_landmarks = draw_points(img.copy(), landmarks_points, color=color, thickness=thickness)
-    img_face_contour = cv2.polylines(img.copy(), [convexhull], True, color, thickness)
-    face_image, face_mask = get_faceImg_and_mask(img, img_gray, convexhull)
-
-    # White mask for showing results
-    whiteMask = cv2.fillConvexPoly(np.ones_like(img) * 255, convexhull, 0)
-    face_image = whiteMask + face_image
-
-    triangles_points = get_triangles_points(landmarks_points, indexes_triangles)
-    face_triangles = draw_triangles(face_image.copy(), triangles_points, color=color, thickness=thickness)
-
-    # RESULTS 2
-    img_face2 = draw_square(img2.copy(), [(face2.left(), face2.top()), (face2.right(), face2.bottom())], color=color, thickness=thickness)
-    img_landmarks2 = draw_points(img2.copy(), landmarks_points2, color=color, thickness=thickness)
-    img_face_contour2 = cv2.polylines(img2.copy(), [convexhull2], True, color, thickness)
-    face_image2, face_mask2 = get_faceImg_and_mask(img2, img_gray2, convexhull2)
-
-    # White mask for showing results
-    whiteMask2 = cv2.fillConvexPoly(np.ones_like(img2) * 255, convexhull2, 0)
-    face_image2 = whiteMask2 + face_image2
-
-    triangles_points2 = get_triangles_points(landmarks_points2, indexes_triangles2)
-    face_triangles2 = draw_triangles(face_image2.copy(), triangles_points2, color=color, thickness=thickness)
-
-    result = [
-        (img, img_face, img_landmarks, img_face_contour, face_image, face_triangles),
-        (img2, img_face2, img_landmarks2, img_face_contour2, face_image2, face_triangles2)
-    ]
-
-    return result
-
-
-def get_triangles_points(points, indexes):
-    result_points = []
-    for index in indexes:
-        tr2_pt1 = points[index[0]]
-        tr2_pt2 = points[index[1]]
-        tr2_pt3 = points[index[2]]
-
-        result_points.append([tr2_pt1, tr2_pt2, tr2_pt3])
-
-    return result_points
