@@ -84,7 +84,7 @@ def get_delaunay_triangulation(landmarks_points, convexhull):
 
 
 def get_new_face(img, img2, landmarks_points, landmarks_points2, indexes_triangles):
-    img2_new_face = np.zeros(img2.shape, np.uint8)
+    img_new_face = np.zeros(img2.shape, np.uint8)
 
     # Triangulation of both faces
     for triangle_index in indexes_triangles:
@@ -130,15 +130,15 @@ def get_new_face(img, img2, landmarks_points, landmarks_points2, indexes_triangl
         warped_triangle = cv2.bitwise_and(warped_triangle, warped_triangle, mask=cropped_tr2_mask)
 
         # Reconstructing destination face
-        img2_new_face_rect_area = img2_new_face[y: y + h, x: x + w]
-        img2_new_face_rect_area_gray = cv2.cvtColor(img2_new_face_rect_area, cv2.COLOR_BGR2GRAY)
-        _, mask_triangles_designed = cv2.threshold(img2_new_face_rect_area_gray, 1, 255, cv2.THRESH_BINARY_INV)
+        img_new_face_rect_area = img_new_face[y: y + h, x: x + w]
+        img_new_face_rect_area_gray = cv2.cvtColor(img_new_face_rect_area, cv2.COLOR_BGR2GRAY)
+        _, mask_triangles_designed = cv2.threshold(img_new_face_rect_area_gray, 1, 255, cv2.THRESH_BINARY_INV)
         warped_triangle = cv2.bitwise_and(warped_triangle, warped_triangle, mask=mask_triangles_designed)
 
-        img2_new_face_rect_area = cv2.add(img2_new_face_rect_area, warped_triangle)
-        img2_new_face[y: y + h, x: x + w] = img2_new_face_rect_area
+        img_new_face_rect_area = cv2.add(img_new_face_rect_area, warped_triangle)
+        img_new_face[y: y + h, x: x + w] = img_new_face_rect_area
 
-    return img2_new_face
+    return img_new_face
 
 
 def change_face(img, convexhull, new_face):
@@ -303,7 +303,7 @@ def get_triangles_img(img, img2):
     face2 = get_faces(img_gray2)[0]
 
     landmarks_points = get_landmarks_points(img_gray, face)
-    landmarks_points2 = get_landmarks_points(img_gray, face2)
+    landmarks_points2 = get_landmarks_points(img_gray2, face2)
 
     convexhull = cv2.convexHull(np.array(landmarks_points, np.int32))
     indexes_triangles = get_delaunay_triangulation(landmarks_points, convexhull)
@@ -321,12 +321,10 @@ def get_triangles_img(img, img2):
         (x, y, w, h) = rect1
         cropped_triangle = img[y: y + h, x: x + w]
         cropped_tr1_mask = np.zeros((h, w), np.uint8)
-        rect1 = cv2.boundingRect(triangle1)
-        (x, y, w, h) = rect1
 
-        points = np.array([[triangle1[0][0] - x, triangle1[0][1] - y],
-                           [triangle1[1][0] - x, triangle1[1][1] - y],
-                           [triangle1[2][0] - x, triangle1[2][1] - y]], np.int32)
+        points = np.array([[tr1_pt1[0] - x, tr1_pt1[1] - y],
+                           [tr1_pt2[0] - x, tr1_pt2[1] - y],
+                           [tr1_pt3[0] - x, tr1_pt3[1] - y]], np.int32)
 
         cv2.fillConvexPoly(cropped_tr1_mask, points, 255)
 
@@ -335,12 +333,16 @@ def get_triangles_img(img, img2):
         tr2_pt2 = landmarks_points2[triangle_index[1]]
         tr2_pt3 = landmarks_points2[triangle_index[2]]
         triangle2 = np.array([tr2_pt1, tr2_pt2, tr2_pt3], np.int32)
+
         rect2 = cv2.boundingRect(triangle2)
         (x, y, w, h) = rect2
+
         cropped_tr2_mask = np.zeros((h, w), np.uint8)
-        points2 = np.array([[triangle2[0][0] - x, triangle2[0][1] - y],
-                            [triangle2[1][0] - x, triangle2[1][1] - y],
-                            [triangle2[2][0] - x, triangle2[2][1] - y]], np.int32)
+
+        points2 = np.array([[tr2_pt1[0] - x, tr2_pt1[1] - y],
+                            [tr2_pt2[0] - x, tr2_pt2[1] - y],
+                            [tr2_pt3[0] - x, tr2_pt3[1] - y]], np.int32)
+
         cv2.fillConvexPoly(cropped_tr2_mask, points2, 255)
 
         # Warp triangles
@@ -353,9 +355,7 @@ def get_triangles_img(img, img2):
         # Reconstructing destination face
         img_new_face_rect_area = img_new_face[y: y + h, x: x + w]
         img_new_face_rect_area_gray = cv2.cvtColor(img_new_face_rect_area, cv2.COLOR_BGR2GRAY)
-        _, mask_triangles_designed = cv2.threshold(img_new_face_rect_area_gray, 1, 255,
-                                                   cv2.THRESH_BINARY_INV)  # Pixels 0 = 0, Pixels > 0 = 255, invertim
-
+        _, mask_triangles_designed = cv2.threshold(img_new_face_rect_area_gray, 1, 255, cv2.THRESH_BINARY_INV)
         warped_triangle = cv2.bitwise_and(warped_triangle, warped_triangle, mask=mask_triangles_designed)
 
         img_new_face_rect_area = cv2.add(img_new_face_rect_area, warped_triangle)
