@@ -252,6 +252,10 @@ def get_process(img, img2):
     img_head_noface = cv2.bitwise_and(img, img, mask=img_face_mask)
     img_changed_face = cv2.add(img_head_noface, img_new_face)
 
+    # White mask for showing results
+    img_face_mask_white = np.ones_like(img[:, :, :])*255
+    img_head_mask_white = cv2.fillConvexPoly(img_face_mask_white, convexhull, 0)
+
     # RESULTS 2
     img_face2 = draw_square(img2.copy(), [(face2.left(), face2.top()), (face2.right(), face2.bottom())], color=color,
                             thickness=thickness)
@@ -273,11 +277,15 @@ def get_process(img, img2):
     img2_head_noface = cv2.bitwise_and(img2, img2, mask=img2_face_mask)
     img2_changed_face = cv2.add(img2_head_noface, img2_new_face)
 
+    # White mask for showing results
+    img2_face_mask_white = np.ones_like(img2[:, :, :]) * 255
+    img2_head_mask_white = cv2.fillConvexPoly(img2_face_mask_white, convexhull2, 0)
+
     result = [
         (img, img_face, img_landmarks, img_face_contour, face_image, face_triangles),
         (img2, img_face2, img_landmarks2, img_face_contour2, face_image2, face_triangles2),
-        (img_new_face, img_changed_face, img_changed_face_filtered),
-        (img2_new_face, img2_changed_face, img2_changed_face_filtered)
+        (img_new_face + img_head_mask_white, img_changed_face, img_changed_face_filtered),
+        (img2_new_face + img2_head_mask_white, img2_changed_face, img2_changed_face_filtered)
     ]
 
     return result
@@ -306,6 +314,7 @@ def get_triangles_img(img, img2):
     landmarks_points2 = get_landmarks_points(img_gray2, face2)
 
     convexhull = cv2.convexHull(np.array(landmarks_points, np.int32))
+    convexhull2 = cv2.convexHull(np.array(landmarks_points2, np.int32))
     indexes_triangles = get_delaunay_triangulation(landmarks_points, convexhull)
 
     img_new_face = np.zeros(img2.shape, np.uint8)
@@ -364,4 +373,8 @@ def get_triangles_img(img, img2):
         i1 = draw_triangle(img.copy(), tr1_pt1, tr1_pt2, tr1_pt3)
         i2 = draw_triangle(img2.copy(), tr2_pt1, tr2_pt2, tr2_pt3)
 
-        yield (i1, i2, img_new_face)
+        # White mask for showing results
+        img2_face_mask_white = np.ones_like(img2[:, :, :]) * 255
+        img2_head_mask_white = cv2.fillConvexPoly(img2_face_mask_white, convexhull2, 0)
+
+        yield (i1, i2, img_new_face + img2_head_mask_white)
