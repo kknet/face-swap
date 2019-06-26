@@ -18,10 +18,13 @@ This is how the results look like:
 
 And what the script does:
 
+* First steps:
 ![Process](https://github.com/oriolbernal/face-swap/blob/master/results/first_steps81.png)
 
+* Calculate the new face:
 ![Process2](https://github.com/oriolbernal/face-swap/blob/master/results/second_step81.gif)
 
+* Swap the new faces and apply color filter:
 ![Process3](https://github.com/oriolbernal/face-swap/blob/master/results/last_steps81.png)
 
 ## Resources
