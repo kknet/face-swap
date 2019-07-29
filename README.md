@@ -24,7 +24,7 @@ And what the script does:
 * Calculate the new face:
 ![Process2](https://github.com/oriolbernal/face-swap/blob/master/results/second_step81.gif)
 
-* Swap the new faces and apply color filter:
+* Swap the new faces and apply a color filter:
 ![Process3](https://github.com/oriolbernal/face-swap/blob/master/results/last_steps81.png)
 
 ## Resources
