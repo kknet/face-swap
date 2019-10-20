@@ -31,7 +31,7 @@ And what the script does:
 
 * The 81 points landmark detector model found in [codeniko - shape_predictor_81_face_landmarks](https://github.com/codeniko/shape_predictor_81_face_landmarks) has been used.
 
-### Examples
+## Examples
 
 We can swap the faces from one image:
 
